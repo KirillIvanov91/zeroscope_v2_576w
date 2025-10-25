@@ -22,10 +22,11 @@ COPY requirements.txt .
 # Обновляем pip и ставим зависимости
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir xformers==0.0.23.post1
+    pip install --no-cache-dir xformers==0.0.23.post1 && \
+    pip cache purge
 
-# Проверка окружения
-RUN python -c "import torch, xformers; print(f'✅ Torch {torch.__version__}, CUDA available: {torch.cuda.is_available()}, XFormers {xformers.__version__}')"
+
+
 
 # ===============================
 # Копируем приложение
@@ -41,8 +42,13 @@ ENV HUGGINGFACE_HUB_CACHE=/root/.cache/huggingface
 ENV HF_HOME=/root/.cache/huggingface
 ENV TRANSFORMERS_CACHE=/root/.cache/huggingface
 
+
+
 # ===============================
 # Запуск FastAPI сервера
 # ===============================
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]
+
+HEALTHCHECK CMD curl -f http://localhost:8080/ || exit 1
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080", "--timeout-keep-alive", "120"]
+
 
